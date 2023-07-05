@@ -1,0 +1,4 @@
+.pytest_cache
+__pycache__
+build
+world_creator.egg-info
