@@ -18,6 +18,8 @@ Placing models randomly if it's not stated otherwise is important! Use float num
 
 x,y,z means meters, so not far - means that they shouldn't be really away from each other.
 
+If model sounds like a big object(car for example), place it in big distance to another ones.
+
 Example:
 "question": 
 Prompt: Shoes on the table
@@ -48,6 +50,55 @@ Models:
         "x": 0,
         "y": 0,
         "z": 0.5
+    }}
+}}
+]
+
+Another example:
+"question": 3 cars and person next to it
+Prompt:
+Models:
+[
+{{
+    "Model": "Standing person",
+}},
+{{
+    "Model": "SUV",
+}},
+]
+
+"answer":
+[
+{{
+    "Model": "SUV",
+    "Pose": {{
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }}
+}},
+{{
+    "Model": "SUV",
+    "Pose": {{
+        "x": 5.34,
+        "y": 0,
+        "z": 0
+    }}
+}},
+{{
+    "Model": "SUV",
+    "Pose": {{
+        "x": 4,
+        "y": 6.43,
+        "z": 0
+    }}
+}},
+{{
+    "Model": "Standing person",
+    "Pose": {{
+        "x": 7.6,
+        "y": -3.5,
+        "z": 0
     }}
 }}
 ]

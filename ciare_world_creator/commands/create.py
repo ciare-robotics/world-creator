@@ -84,27 +84,39 @@ def cli(ctx):
         )
     ]
 
-    content = fmt_world_qa_tmpl.format(context_str=worlds)
+    generate_world = questionary.confirm(
+        "Do you want to also ask model to download pre-existing world?"
+        "Saying no will spawn models in empty world, it's more stable and predictable. Y/n",
+        style=STYLE,
+    ).ask()
+    if generate_world is None:
+        sys.exit(os.EX_OK)
 
-    questionary.print("Generating world... 🌎", style="bold fg:yellow")
-    world = prompt_model(content, query)
+    if generate_world:
+        content = fmt_world_qa_tmpl.format(context_str=worlds)
 
-    questionary.print(
-        f"World is {world['World']}, downloading it", style="bold italic fg:green"
-    )
+        questionary.print("Generating world... 🌎", style="bold fg:yellow")
+        world = prompt_model(content, query)
 
-    full_world = find_world(world["World"], full_worlds)
-    template_world_path = None
-    if world["World"] != "None":
-        template_world_path = download_world(
-            world["World"], full_world["owner"], cache.worlds_path
-        )
-
-    if not template_world_path:
         questionary.print(
-            "There was error in download world. Falling back to empty world",
-            style="bold italic fg:red",
+            f"World is {world['World']}, downloading it", style="bold italic fg:green"
         )
+
+        full_world = find_world(world["World"], full_worlds)
+        template_world_path = None
+        if world["World"] != "None":
+            template_world_path = download_world(
+                world["World"], full_world["owner"], cache.worlds_path
+            )
+
+        if not template_world_path:
+            questionary.print(
+                "There was error in download world. Falling back to empty world",
+                style="bold italic fg:red",
+            )
+            template_world_path = os.path.join(cache.worlds_path, "empty.sdf")
+    else:
+        world = {"World": "None"}
         template_world_path = os.path.join(cache.worlds_path, "empty.sdf")
 
     if not check_world(template_world_path):
