@@ -34,7 +34,7 @@ from ciare_world_creator.xml.worlds import (
 def cli(ctx):
     cache = Cache()
     db = TinyDB(os.path.join(cache.worlds_path, "world_db.json"))
-    
+
     from ciare_world_creator.llm.model import prompt_model
 
     # Only gazebo is supported
