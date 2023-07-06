@@ -9,12 +9,11 @@ Ciare World Creator is a CLI tool that reimagines the creation of simulation wor
 
 Imagine a scenario where you want to test the navigation capabilities of a robot. With Ciare World Creator, you no longer have to spend hours meticulously positioning every object in the simulation. Instead, you simply provide input text to the Ciare pipeline, and it takes care of the rest. Ciare intelligently spawns models in a reasonable manner, allowing you to focus on testing your solution in a simulated environment that closely resembles real-world scenarios.
 
+<p align="center">
+  <img width="600" src="https://cdn.rawgit.com/ciare-robotics/world-creator/main/docs/media/demo.svg">
+</p>
 
 # Features
-
-<p align="center">
-  <img width="600" src="https://cdn.rawgit.com/marionebl/svg-term-cli/1250f9c1/examples/parrot.svg">
-</p>
 
 ## Current limitations
 
