@@ -1,8 +1,8 @@
 
 [![Ciare World Creator](/docs/media/logo.png)](https://ciare.dev)
 
-[![GitHub open issues](https://img.shields.io/github/issues-raw/ciare/world-creator.svg)](https://github.com/ciare/world-creator/issues)
-[![GitHub open pull requests](https://img.shields.io/github/issues-pr-raw/ciare/world-creator.svg)](https://github.com/ciare/world-creator/pulls)
+[![GitHub open issues](https://img.shields.io/github/issues-raw/ciare-robotics/world-creator.svg)](https://github.com/ciare/world-creator/issues)
+[![GitHub open pull requests](https://img.shields.io/github/issues-pr-raw/ciare-robotics/world-creator.svg)](https://github.com/ciare/world-creator/pulls)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 Ciare World Creator is a CLI tool that reimagines the creation of simulation worlds for robotics. We have a vision that in the future you will not be obliged to painstakingly craft detailed SDF files. With Ciare, you will be able to effortlessly generate dynamic and realistic simulation environments by simply providing input text. Whether you're testing robot navigation or experimenting with new solutions, Ciare intelligently spawns models, freeing you from the complexities of precise object placement. By harnessing the power of Language Models (LLMs), Ciare empowers developers to rapidly prototype and explore their ideas, simplifying the simulation process and unlocking a world of possibilities for innovation.
@@ -10,7 +10,7 @@ Ciare World Creator is a CLI tool that reimagines the creation of simulation wor
 Imagine a scenario where you want to test the navigation capabilities of a robot. With Ciare World Creator, you no longer have to spend hours meticulously positioning every object in the simulation. Instead, you simply provide input text to the Ciare pipeline, and it takes care of the rest. Ciare intelligently spawns models in a reasonable manner, allowing you to focus on testing your solution in a simulated environment that closely resembles real-world scenarios.
 
 <p align="center">
-  <img width="600" src="https://cdn.jsdelivr.net/gh/ciare-robotics/world-creator@latest/docs/media/demo.svg">
+  <img width="800" src="https://cdn.jsdelivr.net/gh/ciare-robotics/world-creator@latest/docs/media/demo.svg">
 </p>
 
 # Features
@@ -50,6 +50,8 @@ Currently, we use https://app.gazebosim.org/dashboard as database of the models.
 ## Installation(Using poetry)
 
 ```
+git clone https://github.com/ciare-robotics/world-creator.git
+cd world-creator
 poetry install
 ```
 
