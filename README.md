@@ -47,13 +47,20 @@ Currently, we use https://app.gazebosim.org/dashboard as database of the models.
 
 # Getting Started
 
-## Installation(Using poetry)
+## Installation
 
+### From source using poetry
 ```
 git clone https://github.com/ciare-robotics/world-creator.git
 cd world-creator
 poetry install
 ```
+
+### Using pip
+```
+pip3 install ciare-world-creator
+```
+
 
 ## Token configuration
 

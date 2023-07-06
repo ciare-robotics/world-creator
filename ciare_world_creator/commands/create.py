@@ -13,7 +13,6 @@ from ciare_world_creator.collections.utils import get_or_create_collection
 from ciare_world_creator.contexts_prompts.model import fmt_model_qa_tmpl
 from ciare_world_creator.contexts_prompts.place import fmt_place_qa_tmpl
 from ciare_world_creator.contexts_prompts.world import fmt_world_qa_tmpl
-from ciare_world_creator.llm.model import prompt_model
 from ciare_world_creator.model_databases.fetch_worlds import download_world
 from ciare_world_creator.model_databases.gazebo import GazeboLoader
 from ciare_world_creator.utils.cache import Cache
@@ -35,6 +34,8 @@ from ciare_world_creator.xml.worlds import (
 def cli(ctx):
     cache = Cache()
     db = TinyDB(os.path.join(cache.worlds_path, "world_db.json"))
+    
+    from ciare_world_creator.llm.model import prompt_model
 
     # Only gazebo is supported
     loader = GazeboLoader()
