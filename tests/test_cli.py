@@ -1,5 +1,7 @@
 import os
+
 from click.testing import CliRunner
+
 from ciare_world_creator.cli import cli
 
 

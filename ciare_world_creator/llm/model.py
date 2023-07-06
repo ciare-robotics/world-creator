@@ -1,6 +1,9 @@
+import os
+import sys
 from typing import List
 
 import langchain
+import openai
 from langchain import OpenAI
 from langchain.cache import SQLiteCache
 from langchain.chat_models import ChatOpenAI
@@ -49,8 +52,17 @@ class CachedChatOpenAI(ChatOpenAI):
 
 
 def prompt_model(context: str, prompt: str):
-    llm = CachedChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0)
+    llm = CachedChatOpenAI(
+        model="gpt-3.5-turbo-16k", temperature=0, max_retries=0, request_timeout=59
+    )
     messages = [SystemMessage(content=context), HumanMessage(content=prompt)]
-    ans = llm(messages)
-
+    try:
+        ans = llm(messages)
+    except openai.error.Timeout:
+        print(
+            "Timeout while waiting for model response."
+            "Probably in your prompt there are too many models\n"
+            "Re-run the script and adapt the prompt so that model will generate less models."
+        )
+        sys.exit(os.EX_UNAVAILABLE)
     return parse_output_to_json(ans.content)
