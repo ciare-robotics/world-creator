@@ -42,6 +42,8 @@ Currently, we use https://app.gazebosim.org/dashboard as database of the models.
 | ------------- | ------------- |
 | Healthcare worker and couple of medical items around them  | ![alt text](./docs/examples/medical.png)  |
 | Pile of fruits and other food in empty world | ![alt text](./docs/examples/pile.png)  |
+| Surgical room | ![alt text](./docs/examples/surgical_room.png) |
+| Warehouse shelves | ![alt text](./docs/examples/warehouse_shelves.png) |
 
 
 
