@@ -57,6 +57,22 @@ def cli(ctx):
     World = Query()
     exists = db.search(World.prompt == query)
 
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    models = openai.Model.list()
+    allowed_models = ["gpt-3.5-turbo-16k"]
+    for model in models["data"]:
+        if model["id"] == "gpt-4":
+            allowed_models.append("gpt-4")
+
+    if len(allowed_models) > 1:
+        chosen_model = questionary.select(
+            message="Choose model to generate with. GPT-4 is much better, but also little-bit more expensive",
+            choices=allowed_models,
+            style=STYLE,
+        ).ask()
+    else:
+        chosen_model = allowed_models[0]
+
     if exists:
         questionary.print(
             f"World already exists at {exists[0]['filepath']}... 🦄",
@@ -86,18 +102,19 @@ def cli(ctx):
     ]
 
     generate_world = questionary.confirm(
-        "Do you want to also ask model to download pre-existing world?"
-        "Saying no will spawn models in empty world, it's more stable and predictable. Y/n",
+        "Do you want to spawn model in an empty world?"
+        "Saying no will download world from database, but it's very unstable. Y/n",
         style=STYLE,
     ).ask()
+
     if generate_world is None:
         sys.exit(os.EX_OK)
 
-    if generate_world:
+    if not generate_world:
         content = fmt_world_qa_tmpl.format(context_str=worlds)
 
         questionary.print("Generating world... 🌎", style="bold fg:yellow")
-        world = prompt_model(content, query)
+        world = prompt_model(content, query, chosen_model)
 
         questionary.print(
             f"World is {world['World']}, downloading it", style="bold italic fg:green"
@@ -131,13 +148,14 @@ def cli(ctx):
         "Spawning models in the world... 🫖", style="bold italic fg:yellow"
     )
     content = fmt_model_qa_tmpl.format(context_str=context)
-    models = prompt_model(content, query)
+    models = prompt_model(content, query, chosen_model)
 
     for model in models:
         if not find_model(model["Model"], full_models):
             models = prompt_model(
                 content,
                 f"{model} was not found in context list. Generate only the one that are in the context",
+                chosen_model,
             )
 
     questionary.print("Placing models in the world... 📍", style="bold italic fg:yellow")
@@ -146,7 +164,7 @@ def cli(ctx):
         world_file=open(template_world_path, "r"),
     )
 
-    placement = prompt_model(content, query)
+    placement = prompt_model(content, query, chosen_model)
 
     # TODO handle ,.; etc
     cleaned_query = re.sub(r'[<>:;.,"/\\|?*]', "", query).strip()

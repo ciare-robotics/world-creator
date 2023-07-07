@@ -51,9 +51,9 @@ class CachedChatOpenAI(ChatOpenAI):
         return chat_result
 
 
-def prompt_model(context: str, prompt: str):
+def prompt_model(context: str, prompt: str, model: str = "gpt-3.5-turbo-16k"):
     llm = CachedChatOpenAI(
-        model="gpt-3.5-turbo-16k", temperature=0, max_retries=0, request_timeout=59
+        model=model, temperature=0, max_retries=0, request_timeout=120
     )
     messages = [SystemMessage(content=context), HumanMessage(content=prompt)]
     try:
