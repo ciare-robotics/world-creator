@@ -66,7 +66,10 @@ def cli(ctx):
 
     if len(allowed_models) > 1:
         chosen_model = questionary.select(
-            message="Choose model to generate with. GPT-4 is much better, but also little-bit more expensive",
+            message=(
+                "Choose model to generate with. GPT-4 is much better,"
+                " but also little-bit more expensive"
+            ),
             choices=allowed_models,
             style=STYLE,
         ).ask()
@@ -89,7 +92,9 @@ def cli(ctx):
         )
     except openai.error.AuthenticationError:
         questionary.print(
-            f"OpenAI api key at {cache.cache_path}/openai_api_key incorrect. Regenerate it at https://platform.openai.com/account/api-keys at copy to {cache.cache_path}/openai_api_key",
+            f"OpenAI api key at {cache.cache_path}/openai_api_key incorrect. "
+            "Regenerate it at https://platform.openai.com/account/api-keys at copy "
+            f"to {cache.cache_path}/openai_api_key",
             style="bold italic fg:red",
         )
         sys.exit(os.EX_DATAERR)
@@ -103,7 +108,7 @@ def cli(ctx):
 
     generate_world = questionary.confirm(
         "Do you want to spawn model in an empty world?"
-        "Saying no will download world from database, but it's very unstable. Y/n",
+        " Saying no will download world from database, but it's very unstable. Y/n",
         style=STYLE,
     ).ask()
 
@@ -154,7 +159,8 @@ def cli(ctx):
         if not find_model(model["Model"], full_models):
             models = prompt_model(
                 content,
-                f"{model} was not found in context list. Generate only the one that are in the context",
+                f"{model} was not found in context list. "
+                "Generate only the one that are in the context",
                 chosen_model,
             )
 
@@ -170,7 +176,6 @@ def cli(ctx):
     cleaned_query = re.sub(r'[<>:;.,"/\\|?*]', "", query).strip()
     world_name = f'world_{cleaned_query.replace(" ", "_")}'
 
-    x, y = 0, 0
     include_elements = []
     i = 0
 
@@ -182,7 +187,8 @@ def cli(ctx):
         m = find_model(model["Model"], full_models)
         if not m:
             questionary.print(
-                f"Model {model} was not found in database. LLM hallucinated and made that up, skipping this model...",
+                f"Model {model} was not found in database. "
+                "LLM hallucinated and made that up, skipping this model...",
                 style="bold italic fg:red",
             )
             non_existent_models.append(model)
@@ -197,7 +203,8 @@ def cli(ctx):
             0,
             0,
             0,
-            f"https://fuel.gazebosim.org/1.0/{m['owner']}/models/{m['name'].replace(' ', '%20')}",
+            "https://fuel.gazebosim.org/1.0/"
+            f"{m['owner']}/models/{m['name'].replace(' ', '%20')}",
         )
         include_elements.append(include)
         i = i + 1

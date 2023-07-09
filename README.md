@@ -15,6 +15,10 @@ Imagine a scenario where you want to test the navigation capabilities of a robot
 
 # Features
 
+## Models
+
+Currently it uses gpt-3.5-16k by default, but if you have access to gpt-4, you will be prompted with a selection. Note that gpt-4 performs much better, but not everyone has the invitation from OpenAI to use it.
+
 ## Current limitations
 
 Currently it's Proof Of Concept solution. There will be a lot of future development. Right now it really does often hallucinate and it's spatial notion is not that great, but sometimes it generates something cool.
@@ -44,7 +48,7 @@ Currently, we use https://app.gazebosim.org/dashboard as database of the models.
 | Pile of fruits and other food in empty world | ![alt text](./docs/examples/pile.png)  |
 | Surgical room | ![alt text](./docs/examples/surgical_room.png) |
 | Warehouse shelves | ![alt text](./docs/examples/warehouse_shelves.png) |
-
+| Usual persons living room| ![alt text](./docs/examples/living_room.png) |
 
 
 # Getting Started
