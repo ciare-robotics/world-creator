@@ -13,6 +13,7 @@ from ciare_world_creator.collections.utils import get_or_create_collection
 from ciare_world_creator.contexts_prompts.model import fmt_model_qa_tmpl
 from ciare_world_creator.contexts_prompts.place import fmt_place_qa_tmpl
 from ciare_world_creator.contexts_prompts.world import fmt_world_qa_tmpl
+from ciare_world_creator.model_databases.fetch_models import download_model_files
 from ciare_world_creator.model_databases.fetch_worlds import download_world
 from ciare_world_creator.model_databases.gazebo import GazeboLoader
 from ciare_world_creator.utils.cache import Cache
@@ -194,7 +195,9 @@ def cli(ctx):
             non_existent_models.append(model)
             i = i + 1
             continue
-
+        
+        download_model_files(m['owner'], m['name'], "1", directory='/var/tmp/ciare/models')
+   
         include = add_model_to_xml(
             m["name"] + str(i),
             model["Pose"]["x"],
@@ -203,8 +206,7 @@ def cli(ctx):
             0,
             0,
             0,
-            "https://fuel.gazebosim.org/1.0/"
-            f"{m['owner']}/models/{m['name'].replace(' ', '%20')}",
+            
         )
         include_elements.append(include)
         i = i + 1

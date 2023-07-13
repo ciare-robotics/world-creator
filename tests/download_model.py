@@ -1,10 +1,3 @@
-import asyncio
-import copy
-import json
-
-import aiohttp
-
-from ciare_world_creator.utils.style import delete_last_line
 import os
 import requests
 from pprint import pprint
@@ -34,13 +27,11 @@ def retrieve_paths(json_data, parent_path=''):
     return paths
 
 def download_model_files(username, model, version, directory=''):
+    print(f"Downloading model files for model {model} and saving to {directory}")
     parent_dir = os.path.basename(directory) 
     if parent_dir != model:
         directory = os.path.join(directory, model)
-    if os.path.exists(directory):
-        print("Model {model} already exists at {directory}, not downloaiding it")
-        return 
-    print(f"Downloading model files for model {model} and saving to {directory}")
+        
     # Create a directory with the model name if no custom directory is provided
     if not directory:
         directory = model
@@ -58,9 +49,9 @@ def download_model_files(username, model, version, directory=''):
     for path in paths:
         if len(path.split(".")) == 1:
             continue
-        download_model(username, model, version, path, directory)
+        download_model(username, model, path, directory)
 
-def download_model(username, model, version, file_path, directory):
+def download_model(username, model, file_path, directory):
     gz_server_file_path = file_path[1:] if file_path[0] == "/" else file_path
     local_file_path = os.path.join(directory, gz_server_file_path)
 
@@ -79,56 +70,8 @@ def download_model(username, model, version, file_path, directory):
         print(f"Failed to download: {file_name}")
 
 
-
-async def fetch(session, url, params):
-    async with session.get(url, params=params) as response:
-        try:
-            response_data = await response.json()
-            return response_data
-        except aiohttp.client_exceptions.ContentTypeError:
-            return {"message": "Page not found"}
-
-
-async def fetch_models(fp: str):
-    url = "https://fuel.gazebosim.org/1.0/models"
-    params = {"page": 1}
-    worlds = []
-
-    should_stop = False
-
-    async with aiohttp.ClientSession() as session:
-        while not should_stop:
-            if params["page"] != 1:
-                delete_last_line()
-            print(f"Fetching models page {params['page']}")
-            tasks = []
-            batch_size = 5  # Number of requests to send in parallel
-
-            for _ in range(batch_size):
-                tasks.append(fetch(session, url, copy.deepcopy(params)))
-
-                params["page"] += 1
-            # Execute the requests in parallel
-            responses = await asyncio.gather(*tasks)
-
-            for response_data in responses:
-                if (
-                    isinstance(response_data, dict)
-                    and response_data.get("message") == "Page not found"
-                ):
-                    should_stop = True
-                    break
-
-                worlds.extend(response_data)
-
-            if len(responses) < batch_size:
-                # Break the loop if fewer responses were received than expected
-                break
-
-    with open(fp, "w+") as file:
-        file.write(json.dumps(worlds) + "\n")
-    print(f"Saved models at {fp}")
-
-
-if __name__ == "__main__":
-    asyncio.run(fetch_models())
+# Usage example
+username = 'chapulina'
+model = 'Apartment'
+version = '1'
+download_model_files(username, model, version, directory='/var/tmp/ciare/models')
