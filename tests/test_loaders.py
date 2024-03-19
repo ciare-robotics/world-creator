@@ -3,7 +3,20 @@ import unittest
 from unittest import mock
 
 from ciare_world_creator.model_databases.gazebo import GazeboLoader
-from ciare_world_creator.utils.cache import Cache
+from ciare_world_creator.model_databases.objaverse import ObjaverseLoader
+
+
+class TestObjaverseLoader(unittest.TestCase):
+    def setUp(self):
+        self.loader = ObjaverseLoader()
+
+    def tearDown(self):
+        self.loader = None
+
+    def test_get_models(self):
+        only_description_models = self.loader.get_models()
+
+        self.assertEqual(only_description_models, [])
 
 
 class TestGazeboLoader(unittest.TestCase):
