@@ -15,6 +15,7 @@ from ciare_world_creator.contexts_prompts.place import fmt_place_qa_tmpl
 from ciare_world_creator.contexts_prompts.world import fmt_world_qa_tmpl
 from ciare_world_creator.model_databases.fetch_worlds import download_world
 from ciare_world_creator.model_databases.gazebo import GazeboLoader
+from ciare_world_creator.model_databases.objaverse import ObjaverseLoader
 from ciare_world_creator.utils.cache import Cache
 from ciare_world_creator.utils.style import STYLE
 from ciare_world_creator.xml.worlds import (
@@ -37,11 +38,20 @@ def cli(ctx):
 
     from ciare_world_creator.llm.model import prompt_model
 
-    # Only gazebo is supported
-    loader = GazeboLoader()
-    full_models = loader.get_models_full()
-    full_worlds = loader.get_worlds_full()
+    simulators = ["mujoco", "gazebo"]
+    chosen_simulator = questionary.select(
+        message=("Choose simulator to generate world for."),
+        choices=simulators,
+        style=STYLE,
+    ).ask()
 
+    if chosen_simulator == "gazebo":
+        # Only gazebo is supported
+        loader = GazeboLoader()
+        full_models = loader.get_models_full()
+        full_worlds = loader.get_worlds_full()
+    elif chosen_simulator == "mujoco":
+        loader = ObjaverseLoader()
     models, worlds = loader.get_models()
 
     world_query = questionary.text(
@@ -59,23 +69,8 @@ def cli(ctx):
 
     openai.api_key = os.getenv("OPENAI_API_KEY")
     models = openai.Model.list()
-    allowed_models = ["gpt-3.5-turbo-16k"]
-    for model in models["data"]:
-        if model["id"] == "gpt-4":
-            allowed_models.append("gpt-4")
 
-    if len(allowed_models) > 1:
-        chosen_model = questionary.select(
-            message=(
-                "Choose model to generate with. GPT-4 is much better,"
-                " but also little-bit more expensive"
-            ),
-            choices=allowed_models,
-            style=STYLE,
-        ).ask()
-    else:
-        chosen_model = allowed_models[0]
-
+    chosen_model = "gpt-4"
     if exists:
         questionary.print(
             f"World already exists at {exists[0]['filepath']}... 🦄",
@@ -83,7 +78,7 @@ def cli(ctx):
         )
         return
 
-    model_collection = get_or_create_collection("models")
+    model_collection = get_or_create_collection("models_" + chosen_simulator)
     try:
         claim_query_result = model_collection.query(
             query_texts=[query],

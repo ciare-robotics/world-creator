@@ -9,9 +9,9 @@ class ObjaverseLoader(BaseLoader):
 
         truncated_annotations = (
             {}
-        )  # Only take 20 annotations from each of the category, we don't need more
+        )  # Only take 3 annotations from each of the category, we don't need more
         for key, value_list in lvis_annotations.items():
-            truncated_annotations[key] = value_list[:20]
+            truncated_annotations[key] = value_list[:3]
 
         self.uid_to_category = {}
         for key, value_list in truncated_annotations.items():
@@ -27,9 +27,10 @@ class ObjaverseLoader(BaseLoader):
             only_description_models.append(
                 {
                     "uuid": uuid,
-                    "name": self.annotations[uuid],
+                    "name": self.annotations[uuid]["name"],
                     "categories": [category],
+                    "tags": [tag["name"] for tag in self.annotations[uuid]["tags"]],
                 }
             )
 
-        return only_description_models
+        return only_description_models, None
