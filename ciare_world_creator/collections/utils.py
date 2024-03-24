@@ -16,8 +16,8 @@ def fill_index(collection, loader: BaseLoader):
         f"Generating indicies for chromadb. This might take a while, but it's done only once",
         style="bold italic fg:green",
     )
-    models = loader.get_models()
-
+    models, _ = loader.get_models()
+    print(models)
     df_models = pd.DataFrame(models)
     df_models = df_models.drop_duplicates(subset="name")
     df_models["tags"] = df_models["tags"].apply(

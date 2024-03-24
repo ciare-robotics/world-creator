@@ -1,3 +1,6 @@
+import json
+import os
+
 import objaverse
 
 from ciare_world_creator.model_databases.base import BaseLoader
@@ -5,6 +8,15 @@ from ciare_world_creator.model_databases.base import BaseLoader
 
 class ObjaverseLoader(BaseLoader):
     def __init__(self):
+        fp = "./LVIS.json"
+        if os.path.exists(fp):
+            # If the file does not exist, create it and dump the JSON data
+            with open(fp, "r") as file:
+                cached = json.load(file)
+                self.annotations = cached[0]
+                self.uid_to_category = cached[1]
+            return
+
         lvis_annotations = objaverse.load_lvis_annotations()
 
         truncated_annotations = (
@@ -19,6 +31,8 @@ class ObjaverseLoader(BaseLoader):
                 self.uid_to_category[item] = key
 
         self.annotations = objaverse.load_annotations(self.uid_to_category.keys())
+        with open(fp, "w") as file:
+            json.dump([self.annotations, self.uid_to_category], file)
 
     def get_models(self):
         only_description_models = []

@@ -16,15 +16,11 @@ from ciare_world_creator.contexts_prompts.world import fmt_world_qa_tmpl
 from ciare_world_creator.model_databases.fetch_worlds import download_world
 from ciare_world_creator.model_databases.gazebo import GazeboLoader
 from ciare_world_creator.model_databases.objaverse import ObjaverseLoader
+from ciare_world_creator.sim_interfaces.gazebo import GazeboSimInterface
+from ciare_world_creator.sim_interfaces.mujoco import MujocoSimInterface
 from ciare_world_creator.utils.cache import Cache
 from ciare_world_creator.utils.style import STYLE
-from ciare_world_creator.xml.worlds import (
-    add_model_to_xml,
-    check_world,
-    find_model,
-    find_world,
-    save_xml,
-)
+from ciare_world_creator.xml.worlds import find_model
 
 
 @click.command(
@@ -39,25 +35,26 @@ def cli(ctx):
     from ciare_world_creator.llm.model import prompt_model
 
     simulators = ["mujoco", "gazebo"]
-    chosen_simulator = questionary.select(
-        message=("Choose simulator to generate world for."),
-        choices=simulators,
-        style=STYLE,
-    ).ask()
-
+    # chosen_simulator = questionary.select(
+    #     message=("Choose simulator to generate world for."),
+    #     choices=simulators,
+    #     style=STYLE,
+    # ).ask()
+    chosen_simulator = "mujoco"
     if chosen_simulator == "gazebo":
         # Only gazebo is supported
         loader = GazeboLoader()
-        full_models = loader.get_models_full()
-        full_worlds = loader.get_worlds_full()
+        interface = GazeboSimInterface()
     elif chosen_simulator == "mujoco":
         loader = ObjaverseLoader()
+        interface = MujocoSimInterface()
     models, worlds = loader.get_models()
 
-    world_query = questionary.text(
-        "Enter query for world generation(E.g Two cars and person next to it)",
-        style=STYLE,
-    ).ask()
+    # world_query = questionary.text(
+    #     "Enter query for world generation(E.g Two cars and person next to it)",
+    #     style=STYLE,
+    # ).ask()
+    world_query = "10 cups"
     if not world_query:
         sys.exit(os.EX_OK)
 
@@ -68,7 +65,7 @@ def cli(ctx):
     exists = db.search(World.prompt == query)
 
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    models = openai.Model.list()
+    llm_models = openai.Model.list()
 
     chosen_model = "gpt-4"
     if exists:
@@ -78,7 +75,7 @@ def cli(ctx):
         )
         return
 
-    model_collection = get_or_create_collection("models_" + chosen_simulator)
+    model_collection = get_or_create_collection("models_" + chosen_simulator, loader)
     try:
         claim_query_result = model_collection.query(
             query_texts=[query],
@@ -101,16 +98,18 @@ def cli(ctx):
         )
     ]
 
-    generate_world = questionary.confirm(
-        "Do you want to spawn model in an empty world?"
-        " Saying no will download world from database, but it's very unstable. Y/n",
-        style=STYLE,
-    ).ask()
+    # generate_world = questionary.confirm(
+    #     "Do you want to spawn model in an empty world?"
+    #     " Saying no will download world from database, but it's very unstable. Y/n",
+    #     style=STYLE,
+    # ).ask()
+
+    generate_world = False
 
     if generate_world is None:
         sys.exit(os.EX_OK)
 
-    if not generate_world:
+    if generate_world:
         content = fmt_world_qa_tmpl.format(context_str=worlds)
 
         questionary.print("Generating world... 🌎", style="bold fg:yellow")
@@ -120,7 +119,7 @@ def cli(ctx):
             f"World is {world['World']}, downloading it", style="bold italic fg:green"
         )
 
-        full_world = find_world(world["World"], full_worlds)
+        full_world = interface.find_world(world["World"], worlds)
         template_world_path = None
         if world["World"] != "None":
             template_world_path = download_world(
@@ -137,7 +136,7 @@ def cli(ctx):
         world = {"World": "None"}
         template_world_path = os.path.join(cache.worlds_path, "empty.sdf")
 
-    if not check_world(template_world_path):
+    if not interface.check_world(template_world_path):
         questionary.print(
             "Suggested world is malformed. Falling back to empty world",
             style="bold italic fg:red",
@@ -148,11 +147,12 @@ def cli(ctx):
         "Spawning models in the world... 🫖", style="bold italic fg:yellow"
     )
     content = fmt_model_qa_tmpl.format(context_str=context)
-    models = prompt_model(content, query, chosen_model)
+    chosen_models = prompt_model(content, query, chosen_model)
 
-    for model in models:
-        if not find_model(model["Model"], full_models):
-            models = prompt_model(
+    print(chosen_models)
+    for model in chosen_models:
+        if not find_model(model["Model"], models):
+            chosen_models = prompt_model(
                 content,
                 f"{model} was not found in context list. "
                 "Generate only the one that are in the context",
@@ -161,12 +161,14 @@ def cli(ctx):
 
     questionary.print("Placing models in the world... 📍", style="bold italic fg:yellow")
     content = fmt_place_qa_tmpl.format(
-        context_str=f"Arrange following models: {str(models)}",
+        context_str=f"Arrange following models: {str(chosen_models)}",
         world_file=open(template_world_path, "r"),
     )
-
+    # print(content)
+    # sys.exit(0)
     placement = prompt_model(content, query, chosen_model)
 
+    print(placement)
     # TODO handle ,.; etc
     cleaned_query = re.sub(r'[<>:;.,"/\\|?*]', "", query).strip()
     world_name = f'world_{cleaned_query.replace(" ", "_")}'
@@ -177,9 +179,11 @@ def cli(ctx):
     # TODO add asserts on model fields
     non_existent_models = []
 
+    interface.add_models(placement, models)
+    sys.exit(0)
     for model in placement:
         # Example usage
-        m = find_model(model["Model"], full_models)
+        m = find_model(model["Model"], models)
         if not m:
             questionary.print(
                 f"Model {model} was not found in database. "

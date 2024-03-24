@@ -1,4 +1,7 @@
+import os
+
 import objaverse
+import trimesh
 from aspose.threed import Scene
 from aspose.threed.formats import ObjSaveOptions
 
@@ -26,17 +29,29 @@ obj_locs = list(objects.values())
 print(obj_locs)
 
 
-# trimesh.load(list(objects.values())[4]).show()
-
-
-scene = Scene.from_file(
-    "/home/Alexander.Karavaev/.objaverse/hf-objaverse-v1/glbs/000-023/bear.glb"
+mesh = trimesh.load(list(objects.values())[4])
+# trimesh.exchange.obj.export_obj(mesh)
+obj, data = trimesh.exchange.export.export_obj(
+    mesh, include_texture=True, return_texture=True
 )
+obj_path = "test_m.obj"
+with open(obj_path, "w") as f:
+    f.write(obj)
+# save the MTL and images
+for k, v in data.items():
+    with open(os.path.join("./", k), "wb") as f:
+        f.write(v)
+# reload the mesh from the export
+# rec = trimesh.load(obj_path)
 
-# Specify OBJ save options
-obj_save_options = ObjSaveOptions()
-# Import materials from external material library file
-obj_save_options.enable_materials = True
+# scene = Scene.from_file(
+#     "/home/Alexander.Karavaev/.objaverse/hf-objaverse-v1/glbs/000-023/bear.glb"
+# )
 
-# Save it as an OBJ
-scene.save("test.obj", obj_save_options)
+# # Specify OBJ save options
+# obj_save_options = ObjSaveOptions()
+# # Import materials from external material library file
+# obj_save_options.enable_materials = True
+
+# # Save it as an OBJ
+# scene.save("test.obj", obj_save_options)
