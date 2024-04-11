@@ -4,7 +4,6 @@ from typing import List
 
 import langchain
 import openai
-from langchain import OpenAI
 from langchain.cache import SQLiteCache
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import (
@@ -25,7 +24,8 @@ langchain.llm_cache = SQLiteCache(database_path="/var/tmp/ciare/.langchain.db")
 
 class CachedChatOpenAI(ChatOpenAI):
     def _generate(self, messages: List[BaseMessage], *args, **kwargs) -> ChatResult:
-        # NOTE: the cache does currently not respect additional arguments beyond the messages.
+        # NOTE:the cache does currently not respect
+        # additional arguments beyond the messages.
         messages_prompt = repr(messages)
         if langchain.llm_cache:
             results = langchain.llm_cache.lookup(messages_prompt, self.model_name)
@@ -58,6 +58,7 @@ def prompt_model(context: str, prompt: str, model: str = "gpt-3.5-turbo-16k"):
     messages = [SystemMessage(content=context), HumanMessage(content=prompt)]
     try:
         ans = llm(messages)
+
     except openai.error.Timeout:
         print(
             "Timeout while waiting for model response."

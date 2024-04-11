@@ -7,18 +7,16 @@ import tqdm
 from chromadb.config import Settings
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
-from ciare_world_creator.model_databases.gazebo import GazeboLoader
+from ciare_world_creator.model_databases.base import BaseLoader
 from ciare_world_creator.utils.cache import Cache
 
 
-def fill_index(collection):
+def fill_index(collection, loader: BaseLoader):
     questionary.print(
         f"Generating indicies for chromadb. This might take a while, but it's done only once",
         style="bold italic fg:green",
     )
-    loader = GazeboLoader()
-    models = loader.get_models_full()
-
+    models, _ = loader.get_models()
     df_models = pd.DataFrame(models)
     df_models = df_models.drop_duplicates(subset="name")
     df_models["tags"] = df_models["tags"].apply(
@@ -27,6 +25,7 @@ def fill_index(collection):
     df_models["categories"] = df_models["categories"].apply(
         lambda x: ", ".join(x) if isinstance(x, list) else ""
     )
+
     df_models = df_models.drop_duplicates(subset="name")
 
     batch_size = 100
@@ -47,7 +46,7 @@ def fill_index(collection):
         )
 
 
-def get_or_create_collection(name: str):
+def get_or_create_collection(name: str, loader: BaseLoader):
     # We initialize an embedding function, and provide it to the collection.
     embedding_function = OpenAIEmbeddingFunction(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -61,7 +60,7 @@ def get_or_create_collection(name: str):
 
     # client.delete_collection("models")
     model_collection = client.get_or_create_collection(
-        name="models",
+        name=name,
         embedding_function=embedding_function,
         metadata={"hnsw:space": "cosine"},
     )
@@ -71,6 +70,6 @@ def get_or_create_collection(name: str):
             f"Indicies for models are not created yet. Filling them",
             style="bold italic fg:red",
         )
-        fill_index(model_collection)
+        fill_index(model_collection, loader)
 
     return model_collection

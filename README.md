@@ -15,15 +15,13 @@ Imagine a scenario where you want to test the navigation capabilities of a robot
 
 # Features
 
-## Models
-
-Currently it uses gpt-3.5-16k by default, but if you have access to gpt-4, you will be prompted with a selection. Note that gpt-4 performs much better, but not everyone has the invitation from OpenAI to use it.
-
 ## Current limitations
 
 Currently it's Proof Of Concept solution. There will be a lot of future development. Right now it really does often hallucinate and it's spatial notion is not that great, but sometimes it generates something cool.
 
 Also complex models(like robots) currently is impossible to include. Work will be done on that in the future. Also complex textures of the models are not properly loading too.
+
+[Objaverse](https://objaverse.allenai.org/) loader for contains a lot of uncurated models with size that is very wrong. Under the hood models try to reason for proper scale, but a lot of times it guesses it wrongly. 
 
 ## Integration with other simulators
 Generate simulation worlds on the fly with LLMs.
@@ -32,13 +30,17 @@ Supports selected simulators, with plans to expand support to all major simulato
 Simulator | Supported
 -- | --
 Gazebo | ![Static Badge](https://img.shields.io/badge/Yes-green)
+Mujoco | ![Static Badge](https://img.shields.io/badge/Yes-green)
 Nvidia Isaac Sim | ![Static Badge](https://img.shields.io/badge/Planned-yellow) 
 Unity   | ![Static Badge](https://img.shields.io/badge/Planned-yellow)
 
 ## Model Database
 In the future we want to collect a vast model database from which you can freely choose any model to incorporate into your simulations. It aims to become the largest robotics model database available.
 
-Currently, we use https://app.gazebosim.org/dashboard as database of the models.
+Simulator | Model database
+-- | --
+Gazebo | [Gazebo fuel](https://app.gazebosim.org/dashboard)
+Mujoco | [Objaverse](https://objaverse.allenai.org/)
 
 # Examples
 
@@ -49,6 +51,7 @@ Currently, we use https://app.gazebosim.org/dashboard as database of the models.
 | Surgical room | ![alt text](./docs/examples/surgical_room.png) |
 | Warehouse shelves | ![alt text](./docs/examples/warehouse_shelves.png) |
 | Usual persons living room| ![alt text](./docs/examples/living_room.png) |
+| Couple of shelves | ![alt text](./docs/examples/couple_of_shelves_mjc.png) |
 
 
 # Getting Started

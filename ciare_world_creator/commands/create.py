@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sys
@@ -11,19 +12,16 @@ from tinydb import Query, TinyDB
 
 from ciare_world_creator.collections.utils import get_or_create_collection
 from ciare_world_creator.contexts_prompts.model import fmt_model_qa_tmpl
-from ciare_world_creator.contexts_prompts.place import fmt_place_qa_tmpl
 from ciare_world_creator.contexts_prompts.world import fmt_world_qa_tmpl
 from ciare_world_creator.model_databases.fetch_worlds import download_world
 from ciare_world_creator.model_databases.gazebo import GazeboLoader
+from ciare_world_creator.model_databases.objaverse import ObjaverseLoader
+from ciare_world_creator.sim_interfaces.gazebo import GazeboSimInterface
+from ciare_world_creator.sim_interfaces.mujoco import MujocoSimInterface
 from ciare_world_creator.utils.cache import Cache
+from ciare_world_creator.utils.json import NumpyEncoder
 from ciare_world_creator.utils.style import STYLE
-from ciare_world_creator.xml.worlds import (
-    add_model_to_xml,
-    check_world,
-    find_model,
-    find_world,
-    save_xml,
-)
+from ciare_world_creator.xml.worlds import find_model
 
 
 @click.command(
@@ -37,17 +35,28 @@ def cli(ctx):
 
     from ciare_world_creator.llm.model import prompt_model
 
-    # Only gazebo is supported
-    loader = GazeboLoader()
-    full_models = loader.get_models_full()
-    full_worlds = loader.get_worlds_full()
+    simulators = ["mujoco", "gazebo"]
+    chosen_simulator = questionary.select(
+        message=("Choose simulator to generate world for."),
+        choices=simulators,
+        style=STYLE,
+    ).ask()
 
+    chosen_model = "gpt-4-turbo"  # Gpt-4 is default and cheapest
+    if chosen_simulator == "gazebo":
+        # Only gazebo is supported
+        loader = GazeboLoader()
+        interface = GazeboSimInterface(chosen_model)
+    elif chosen_simulator == "mujoco":
+        loader = ObjaverseLoader()
+        interface = MujocoSimInterface(chosen_model)
     models, worlds = loader.get_models()
 
     world_query = questionary.text(
         "Enter query for world generation(E.g Two cars and person next to it)",
         style=STYLE,
     ).ask()
+
     if not world_query:
         sys.exit(os.EX_OK)
 
@@ -57,39 +66,21 @@ def cli(ctx):
     World = Query()
     exists = db.search(World.prompt == query)
 
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    models = openai.Model.list()
-    allowed_models = ["gpt-3.5-turbo-16k"]
-    for model in models["data"]:
-        if model["id"] == "gpt-4":
-            allowed_models.append("gpt-4")
-
-    if len(allowed_models) > 1:
-        chosen_model = questionary.select(
-            message=(
-                "Choose model to generate with. GPT-4 is much better,"
-                " but also little-bit more expensive"
-            ),
-            choices=allowed_models,
-            style=STYLE,
-        ).ask()
-    else:
-        chosen_model = allowed_models[0]
-
     if exists:
         questionary.print(
             f"World already exists at {exists[0]['filepath']}... 🦄",
             style="bold italic fg:green",
         )
-        return
+        # return
 
-    model_collection = get_or_create_collection("models")
+    model_collection = get_or_create_collection("models_" + chosen_simulator, loader)
     try:
         claim_query_result = model_collection.query(
             query_texts=[query],
             include=["documents", "distances", "metadatas"],
-            n_results=100,
+            n_results=20,
         )
+
     except openai.error.AuthenticationError:
         questionary.print(
             f"OpenAI api key at {cache.cache_path}/openai_api_key incorrect. "
@@ -105,17 +96,9 @@ def cli(ctx):
             claim_query_result["documents"][0], claim_query_result["metadatas"][0]
         )
     ]
+    generate_world = False  # Pretty unstable, disabled for now
 
-    generate_world = questionary.confirm(
-        "Do you want to spawn model in an empty world?"
-        " Saying no will download world from database, but it's very unstable. Y/n",
-        style=STYLE,
-    ).ask()
-
-    if generate_world is None:
-        sys.exit(os.EX_OK)
-
-    if not generate_world:
+    if generate_world:
         content = fmt_world_qa_tmpl.format(context_str=worlds)
 
         questionary.print("Generating world... 🌎", style="bold fg:yellow")
@@ -125,7 +108,7 @@ def cli(ctx):
             f"World is {world['World']}, downloading it", style="bold italic fg:green"
         )
 
-        full_world = find_world(world["World"], full_worlds)
+        full_world = interface.find_world(world["World"], worlds)
         template_world_path = None
         if world["World"] != "None":
             template_world_path = download_world(
@@ -139,87 +122,34 @@ def cli(ctx):
             )
             template_world_path = os.path.join(cache.worlds_path, "empty.sdf")
     else:
-        world = {"World": "None"}
-        template_world_path = os.path.join(cache.worlds_path, "empty.sdf")
-
-    if not check_world(template_world_path):
-        questionary.print(
-            "Suggested world is malformed. Falling back to empty world",
-            style="bold italic fg:red",
-        )
         template_world_path = os.path.join(cache.worlds_path, "empty.sdf")
 
     questionary.print(
-        "Spawning models in the world... 🫖", style="bold italic fg:yellow"
+        "Selecting models from database... 🫖", style="bold italic fg:yellow"
     )
     content = fmt_model_qa_tmpl.format(context_str=context)
-    models = prompt_model(content, query, chosen_model)
+    chosen_models = prompt_model(content, query, chosen_model)
 
-    for model in models:
-        if not find_model(model["Model"], full_models):
-            models = prompt_model(
-                content,
-                f"{model} was not found in context list. "
-                "Generate only the one that are in the context",
-                chosen_model,
-            )
+    # Some models are hallucinated
+    filtered_models = []
+    for model in chosen_models:
+        if find_model(model["Model"], models):
+            filtered_models.append(model)
+    chosen_models = filtered_models
 
-    questionary.print("Placing models in the world... 📍", style="bold italic fg:yellow")
-    content = fmt_place_qa_tmpl.format(
-        context_str=f"Arrange following models: {str(models)}",
-        world_file=open(template_world_path, "r"),
+    questionary.print(
+        f"Placing {len(chosen_models)} models in the world... 📍",
+        style="bold italic fg:yellow",
     )
-
-    placement = prompt_model(content, query, chosen_model)
-
-    # TODO handle ,.; etc
     cleaned_query = re.sub(r'[<>:;.,"/\\|?*]', "", query).strip()
     world_name = f'world_{cleaned_query.replace(" ", "_")}'
+    world_path = (
+        os.path.join(cache.worlds_path, world_name) + interface.get_world_extension()
+    )
 
-    include_elements = []
-    i = 0
-
-    # TODO add asserts on model fields
-    non_existent_models = []
-
-    for model in placement:
-        # Example usage
-        m = find_model(model["Model"], full_models)
-        if not m:
-            questionary.print(
-                f"Model {model} was not found in database. "
-                "LLM hallucinated and made that up, skipping this model...",
-                style="bold italic fg:red",
-            )
-            non_existent_models.append(model)
-            i = i + 1
-            continue
-
-        include = add_model_to_xml(
-            m["name"] + str(i),
-            model["Pose"]["x"],
-            model["Pose"]["y"],
-            model["Pose"]["z"],
-            0,
-            0,
-            0,
-            "https://fuel.gazebosim.org/1.0/"
-            f"{m['owner']}/models/{m['name'].replace(' ', '%20')}",
-        )
-        include_elements.append(include)
-        i = i + 1
-
-    filtered_models = []
-    for model in placement:
-        if model not in non_existent_models:
-            filtered_models.append(model)
-
-    world_path = os.path.join(cache.worlds_path, f"{world_name}.sdf")
-
-    save_xml(world_path, template_world_path, include_elements)
-
-    if template_world_path != os.path.join(cache.worlds_path, "empty.sdf"):
-        os.system(f"rm {template_world_path}")
+    saved_models = interface.add_models(
+        chosen_models, loader.get_models_full(), query, world_path, template_world_path
+    )
 
     db.insert(
         {
@@ -227,8 +157,8 @@ def cli(ctx):
             "name": world_name,
             "filepath": world_path,
             "prompt": query,
-            "total_models": placement,
-            "world_name": world["World"],
+            "total_models": json.dumps(saved_models, cls=NumpyEncoder),
+            "world_name": "Empty",
         }
     )
 

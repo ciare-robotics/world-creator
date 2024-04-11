@@ -1,9 +1,10 @@
 import json
 
+from ciare_world_creator.model_databases.base import BaseLoader
 from ciare_world_creator.utils.cache import Cache
 
 
-class GazeboLoader:
+class GazeboLoader(BaseLoader):
     def __init__(self):
         self.cache = Cache()
 
