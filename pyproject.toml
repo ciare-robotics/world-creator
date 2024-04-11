@@ -22,6 +22,11 @@ aiohttp = "^3.8.4"
 tabulate = "^0.9.0"
 lark = "^1.1.5"
 pre-commit = "^3.3.3"
+objaverse = "0.1.7"
+aspose-words = "^24.3.0"
+aspose-3d = "^24.2.0"
+trimesh = "^4.2.0"
+obj2mjcf = "^0.0.25"
 
 [tool.poetry.dev-dependencies]
 black = "*"

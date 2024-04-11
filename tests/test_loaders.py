@@ -3,7 +3,6 @@ import unittest
 from unittest import mock
 
 from ciare_world_creator.model_databases.gazebo import GazeboLoader
-from ciare_world_creator.utils.cache import Cache
 
 
 class TestGazeboLoader(unittest.TestCase):
